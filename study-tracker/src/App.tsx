@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import Timer from './components/Timer';
 import SessionForm from './components/SessionForm';
-import SessionList from './components/SessionList';
-import Statistics from './components/Statistics';
+import SessionList from './components/SessionList/SessionList';
+import Statistics from './components/Statistics/Statistics';
 import { useSessions } from './hooks/useSessions';
 import type { NavTab, StudySession } from './types';
 
