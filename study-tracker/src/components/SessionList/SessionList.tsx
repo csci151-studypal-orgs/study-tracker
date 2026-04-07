@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { StudySession } from '../../types';
 import SessionItem from './SessionItem';
+import DeleteConfirm from './DeleteConfirm';
 import SessionForm from '../SessionForm/SessionForm';
 
 interface SessionListProps {
@@ -37,6 +38,13 @@ export default function SessionList({ sessions, onUpdate, onDelete }: SessionLis
   const handleEditSave = (updated: StudySession) => {
     onUpdate(updated.id, updated);
     setEditingSession(null);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingSession) {
+      onDelete(deletingSession.id);
+      setDeletingSession(null);
+    }
   };
 
   return (
@@ -89,13 +97,24 @@ export default function SessionList({ sessions, onUpdate, onDelete }: SessionLis
 
       {/* Edit form */}
       {editingSession && (
-        <EditSession
-          session={editingSession}
-          onSave={handleEditSave}
-          onCancel={() => setEditingSession(null)}
-        />
+        <div className="rounded-2xl border border-gray-200 bg-white p-5">
+          <p className="text-sm font-semibold text-gray-800 mb-4">Edit session</p>
+          <SessionForm
+            initial={editingSession}
+            onSessionSave={handleEditSave}
+            onCancel={() => setEditingSession(null)}
+          />
+        </div>
       )}
 
+      {/* Delete confirm */}
+      {deletingSession && (
+        <DeleteConfirm
+          session={deletingSession}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeletingSession(null)}
+        />
+      )}
     </div>
   );
 }
