@@ -3,6 +3,7 @@ import type { StudySession } from '../../types';
 import SessionItem from './SessionItem';
 import DeleteConfirm from './DeleteConfirm';
 import SessionForm from '../SessionForm/SessionForm';
+import { formatDuration } from '../../utils';
 
 interface SessionListProps {
   sessions: StudySession[];
@@ -14,8 +15,9 @@ type SortOrder = 'newest' | 'oldest' | 'longest';
 
 export default function SessionList({ sessions, onUpdate, onDelete }: SessionListProps) {
   const [filterSubject, setFilterSubject] = useState('');
-  const [sortOrder, setSortOrder]         = useState<SortOrder>('newest');
-  const [editingSession, setEditingSession]   = useState<StudySession | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [editingSession, setEditingSession] = useState<StudySession | null>(null);
   const [deletingSession, setDeletingSession] = useState<StudySession | null>(null);
 
   const subjects = useMemo(
@@ -28,12 +30,20 @@ export default function SessionList({ sessions, onUpdate, onDelete }: SessionLis
       ? sessions.filter((s) => s.subject === filterSubject)
       : [...sessions];
 
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      list = list.filter((s) =>
+        s.subject.toLowerCase().includes(query) ||
+        s.notes.toLowerCase().includes(query)
+      );
+    }
+
     if (sortOrder === 'oldest')  list.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     else if (sortOrder === 'longest') list.sort((a, b) => b.duration - a.duration);
     else list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return list;
-  }, [sessions, filterSubject, sortOrder]);
+  }, [sessions, filterSubject, searchQuery, sortOrder]);
 
   const handleEditSave = (updated: StudySession) => {
     onUpdate(updated.id, updated);
@@ -47,42 +57,114 @@ export default function SessionList({ sessions, onUpdate, onDelete }: SessionLis
     }
   };
 
+  const totalDuration = useMemo(() => displayed.reduce((sum, s) => sum + s.duration, 0), [displayed]);
+
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <select
-          value={filterSubject}
-          onChange={(e) => setFilterSubject(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-        >
-          <option value="">All subjects</option>
-          {subjects.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+      {/* Summary */}
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-3xl p-6 border border-emerald-100 shadow-sm ring-1 ring-emerald-100">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-emerald-100 p-3 rounded-2xl">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Study sessions</p>
+              <p className="text-3xl font-semibold text-gray-900">{displayed.length}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 rounded-3xl bg-white/90 p-4 shadow-sm border border-white/90">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-gray-500">Total time</p>
+              <p className="text-xl font-semibold text-gray-900">{formatDuration(totalDuration)}</p>
+            </div>
+            <div className="grid place-items-center w-12 h-12 rounded-2xl bg-teal-100">
+              <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative flex-1 min-w-[220px]">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search subjects or notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label="Clear search"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
 
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value as SortOrder)}
-          className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-        >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="longest">Longest first</option>
-        </select>
+          <div className="relative min-w-[180px] lg:w-60">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <select
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              className="w-full pl-10 pr-9 py-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent appearance-none"
+            >
+              <option value="">All subjects</option>
+              {subjects.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
 
-        <span className="text-xs text-gray-400 ml-auto">
-          {displayed.length} session{displayed.length !== 1 ? 's' : ''}
-        </span>
+          <div className="relative min-w-[180px] lg:w-60">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+              className="w-full pl-10 pr-9 py-3 rounded-2xl border border-gray-200 bg-white text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent appearance-none"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="longest">Longest first</option>
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+          <span className="ml-auto text-xs text-gray-500">{displayed.length} session{displayed.length !== 1 ? 's' : ''}</span>
+        </div>
       </div>
 
       {/* List */}
       <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
         {displayed.length === 0 ? (
-          <p className="text-center text-sm text-gray-400 py-10">
-            No sessions yet. Start the timer or log a session.
-          </p>
+          <div className="text-center py-12">
+            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <p className="text-sm text-gray-400 mb-2">No sessions yet</p>
+            <p className="text-xs text-gray-300">Start the timer or log a session to get started</p>
+          </div>
         ) : (
           displayed.map((s) => (
             <SessionItem
