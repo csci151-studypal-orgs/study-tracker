@@ -1,121 +1,100 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+import Timer from './components/Timer';
+import SessionForm from './components/SessionForm';
+import SessionList from './components/SessionList';
+import Statistics from './components/Statistics';
+import { useSessions } from './hooks/useSessions';
+import type { NavTab, StudySession } from './types';
 
-function App() {
-  const [count, setCount] = useState(0)
+const TABS: { id: NavTab; label: string }[] = [
+  { id: 'timer',    label: 'Timer'      },
+  { id: 'log',      label: 'Log session'},
+  { id: 'sessions', label: 'Sessions'   },
+  { id: 'stats',    label: 'Statistics' },
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState<NavTab>('timer');
+  const { sessions, addSession, updateSession, deleteSession } = useSessions();
+
+  const handleSessionSave = (session: StudySession) => {
+    addSession(session);
+  };
+
+  const handleUpdate = (id: string, patch: Partial<StudySession>) => {
+    updateSession(id, patch);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="7" cy="7" r="5.5" stroke="white" strokeWidth="1.5"/>
+                <path d="M7 4.5V7.5L9 9" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h1 className="text-base font-bold text-gray-800 tracking-tight">Study Tracker</h1>
+          </div>
+          <span className="text-xs text-gray-400">
+            {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+          </span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        {/* Nav tabs */}
+        <div className="max-w-2xl mx-auto px-4 flex gap-1 pb-0">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors focus:outline-none ${
+                activeTab === tab.id
+                  ? 'border-emerald-500 text-emerald-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* Main content */}
+      <main className="max-w-2xl mx-auto px-4 py-8">
+        {activeTab === 'timer' && (
+          <section>
+            <Timer onSessionSave={handleSessionSave} />
+          </section>
+        )}
+
+        {activeTab === 'log' && (
+          <section>
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <h2 className="text-base font-semibold text-gray-800 mb-5">Log a study session</h2>
+              <SessionForm onSessionSave={handleSessionSave} />
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'sessions' && (
+          <section>
+            <SessionList
+              sessions={sessions}
+              onUpdate={handleUpdate}
+              onDelete={deleteSession}
+            />
+          </section>
+        )}
+
+        {activeTab === 'stats' && (
+          <section>
+            <Statistics sessions={sessions} />
+          </section>
+        )}
+      </main>
+    </div>
+  );
 }
-
-export default App
