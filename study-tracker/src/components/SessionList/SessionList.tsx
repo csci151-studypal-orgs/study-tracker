@@ -95,18 +95,6 @@ export default function SessionList({ sessions, onUpdate, onDelete }: SessionLis
         )}
       </div>
 
-      {/* Edit form */}
-      {editingSession && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5">
-          <p className="text-sm font-semibold text-gray-800 mb-4">Edit session</p>
-          <SessionForm
-            initial={editingSession}
-            onSessionSave={handleEditSave}
-            onCancel={() => setEditingSession(null)}
-          />
-        </div>
-      )}
-
       {/* Delete confirm */}
       {deletingSession && (
         <DeleteConfirm
