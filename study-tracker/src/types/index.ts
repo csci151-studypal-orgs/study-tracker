@@ -9,3 +9,7 @@ export interface StudySession {
   /** 'timer' = recorded via built-in timer, 'manual' = manually logged */
   source: 'timer' | 'manual';
 }
+
+export type TimerStatus = 'idle' | 'running' | 'paused' | 'finished';
+
+export type NavTab = 'timer' | 'log' | 'sessions' | 'stats';
