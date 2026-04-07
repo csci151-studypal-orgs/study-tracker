@@ -95,6 +95,15 @@ export default function SessionList({ sessions, onUpdate, onDelete }: SessionLis
         )}
       </div>
 
+      {/* Edit form */}
+      {editingSession && (
+        <EditSession
+          session={editingSession}
+          onSave={handleEditSave}
+          onCancel={() => setEditingSession(null)}
+        />
+      )}
+
       {/* Delete confirm */}
       {deletingSession && (
         <DeleteConfirm
